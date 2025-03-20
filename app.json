@@ -28,7 +28,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#11bd86"
       },
-      "package": "com.tuggi.app"
+      "package": "com.tuggi.app",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -41,6 +45,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2d45f7ed-40b8-47a4-ac9b-5e1321ca5f73"
+      }
     }
   }
 }
