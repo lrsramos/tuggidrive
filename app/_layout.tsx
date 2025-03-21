@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,35 +20,14 @@ export default function RootLayout() {
     }
   }, [isLoading]);
 
-  // Show loading screen while checking auth
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#11bd86" />
-      </View>
-    );
-  }
-
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen 
-          name="(auth)" 
-          options={{ 
-            headerShown: false,
-            // Redirect to tabs if authenticated
-            redirect: session ? '/(tabs)' : undefined,
-          }} 
-        />
-        <Stack.Screen 
-          name="(tabs)" 
-          options={{ 
-            headerShown: false,
-            // Redirect to auth if not authenticated
-            redirect: !session ? '/login' : undefined,
-          }} 
-        />
-      </Stack>
+      <Slot />
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#11bd86" />
+        </View>
+      )}
       <StatusBar style="auto" />
     </>
   );

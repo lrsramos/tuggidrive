@@ -1,10 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, Platform } from 'react-native';
-import MapView, { PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useLocation } from '@/hooks/useLocation';
 import { usePOIs } from '@/hooks/usePOIs';
 import { POIMarker } from '@/components/POIMarker';
 import { useTranslation } from '@/hooks/useTranslation';
+
+// Only import MapView when not on web
+let MapView: any;
+let PROVIDER_DEFAULT: any;
+let PROVIDER_GOOGLE: any;
+
+if (Platform.OS !== 'web') {
+  const Maps = require('react-native-maps');
+  MapView = Maps.default;
+  PROVIDER_DEFAULT = Maps.PROVIDER_DEFAULT;
+  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+}
 
 const DEFAULT_LOCATION = {
   latitude: 0,
@@ -27,7 +38,7 @@ const ZOOM_LEVEL = {
 export default function MapScreen() {
   const { location } = useLocation();
   const { pois, loading, error } = usePOIs(location);
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   const { t } = useTranslation();
   const initialLocationSet = useRef(false);
@@ -35,7 +46,7 @@ export default function MapScreen() {
 
   // Update map when location changes
   useEffect(() => {
-    if (!mapReady || !location || !mapRef.current) return;
+    if (!mapReady || !location || !mapRef.current || Platform.OS === 'web') return;
 
     // Only set initial location once
     if (!initialLocationSet.current) {
@@ -54,6 +65,16 @@ export default function MapScreen() {
       poisLoaded.current = true;
     }
   }, [pois, loading]);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.webMessage}>
+          Map view is not available on web platform
+        </Text>
+      </View>
+    );
+  }
 
   if (error) {
     return (
@@ -126,6 +147,12 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ff3b30',
     fontSize: 16,
+    textAlign: 'center',
+    padding: 20,
+  },
+  webMessage: {
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
     padding: 20,
   },

@@ -4,7 +4,7 @@ import type { POI } from '@/types';
 import { useLocation } from '@/hooks/useLocation';
 import { calculateDirection } from '@/hooks/useDirections';
 import { DirectionIndicator } from './DirectionIndicator';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useSystemLanguage } from '@/hooks/useSystemLanguage';
 import { useEffect, useRef } from 'react';
 import Animated, { 
   useAnimatedStyle, 
@@ -29,7 +29,7 @@ interface NearestPOICardProps {
 
 export function NearestPOICard({ poi, onPress, isSpeaking, error }: NearestPOICardProps) {
   const { location } = useLocation();
-  const { t } = useTranslation();
+  const { systemLanguage } = useSystemLanguage();
   const fadeAnim = useSharedValue(0);
   const scaleAnim = useSharedValue(0.95);
   const gradientPosition = useSharedValue(0);
@@ -94,6 +94,37 @@ export function NearestPOICard({ poi, onPress, isSpeaking, error }: NearestPOICa
     };
   });
 
+  // Get translations based on system language
+  const translations = {
+    'en-US': {
+      nearestAttraction: 'NEAREST ATTRACTION',
+      kmAway: 'km away',
+      playAudio: 'Play Audio',
+      stopAudio: 'Stop Audio'
+    },
+    'es-ES': {
+      nearestAttraction: 'ATRACCIÓN MÁS CERCANA',
+      kmAway: 'km de distancia',
+      playAudio: 'Reproducir Audio',
+      stopAudio: 'Detener Audio'
+    },
+    'fr-FR': {
+      nearestAttraction: 'ATTRACTION LA PLUS PROCHE',
+      kmAway: 'km',
+      playAudio: 'Lire l\'audio',
+      stopAudio: 'Arrêter l\'audio'
+    },
+    'pt-BR': {
+      nearestAttraction: 'ATRAÇÃO MAIS PRÓXIMA',
+      kmAway: 'km de distância',
+      playAudio: 'Reproduzir Áudio',
+      stopAudio: 'Parar Áudio'
+    }
+  };
+
+  // Get translations for current language or fall back to English
+  const currentTranslations = translations[systemLanguage as keyof typeof translations] || translations['en-US'];
+
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <Animated.View style={[styles.gradient, gradientStyle]} />
@@ -102,7 +133,7 @@ export function NearestPOICard({ poi, onPress, isSpeaking, error }: NearestPOICa
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.nearestText}>
-              {t('attractions', 'nearestAttraction')}
+              {currentTranslations.nearestAttraction}
             </Text>
             <Text style={styles.title} numberOfLines={2}>
               {poi.name}
@@ -117,23 +148,11 @@ export function NearestPOICard({ poi, onPress, isSpeaking, error }: NearestPOICa
             )}
             {poi.distance_km !== undefined && (
               <Text style={styles.distance}>
-                {poi.distance_km.toFixed(1)} {t('attractions', 'kmAway')}
+                {poi.distance_km.toFixed(1)} {currentTranslations.kmAway}
               </Text>
             )}
           </View>
         </View>
-
-        <View style={styles.locationContainer}>
-          {poi.city && poi.country && (
-            <Text style={styles.location}>
-              {[poi.city, poi.country].filter(Boolean).join(', ')}
-            </Text>
-          )}
-        </View>
-        
-        <Text style={styles.description} numberOfLines={2}>
-          {poi.description}
-        </Text>
         
         <View style={styles.footer}>
           {error ? (
@@ -153,14 +172,14 @@ export function NearestPOICard({ poi, onPress, isSpeaking, error }: NearestPOICa
                 <>
                   <Pause size={20} color="#fff" />
                   <Text style={styles.playButtonText}>
-                    {t('attractions', 'stopAudio')}
+                    {currentTranslations.stopAudio}
                   </Text>
                 </>
               ) : (
                 <>
                   <Play size={20} color="#fff" />
                   <Text style={styles.playButtonText}>
-                    {t('attractions', 'playAudio')}
+                    {currentTranslations.playAudio}
                   </Text>
                 </>
               )}
@@ -231,23 +250,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  locationContainer: {
-    marginBottom: 8,
-  },
-  location: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-  },
-  description: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 8,
   },
   playButton: {
     flexDirection: 'row',
