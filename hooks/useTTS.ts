@@ -152,11 +152,16 @@ export function useTTS() {
   }, [isInitialized, currentLanguage]);
 
   const stop = useCallback(async () => {
+
     try {
-      await elevenLabs.stop();
-      speakingRef.current = false;
+      if (speakingRef.current) {
+        await elevenLabs.stop();
+        speakingRef.current = false;
+      }
     } catch (error) {
       console.error('Error stopping speech:', error);
+      // Reset speaking state even if stop fails
+      speakingRef.current = false;
     }
   }, []);
 
