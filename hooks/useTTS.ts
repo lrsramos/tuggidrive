@@ -32,7 +32,7 @@ export function useTTS() {
         if (isPremium) {
           try {
             const savedLanguage = await AsyncStorage.getItem(TTS_LANGUAGE_KEY);
-            console.log('[TTS] Stored language preference:', savedLanguage);
+           // console.log('[TTS] Stored language preference:', savedLanguage);
             if (savedLanguage) {
               initialLanguage = savedLanguage;
             } else if (profile?.voice_preference) {
