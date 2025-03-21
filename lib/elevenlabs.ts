@@ -1,5 +1,6 @@
 import { Audio } from 'expo-av';
 import { storage } from './secureStore';
+import * as FileSystem from 'expo-file-system';
 
 const CACHE_PREFIX = '@elevenlabs_cache_';
 const API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
@@ -92,6 +93,15 @@ class ElevenLabsService {
       // Stop any current playback
       await this.stop();
 
+      // Initialize audio session
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
       // Check cache first
       let audioBase64 = await this.getCachedAudio(text, language);
 
@@ -104,15 +114,33 @@ class ElevenLabsService {
         await this.cacheAudio(text, language, audioBase64);
       }
 
-      // Create audio URI with proper MIME type and encoding
-      const audioUri = `data:audio/mp3;base64,${audioBase64}`;
+      // Save base64 audio to a temporary file
+      const tempFile = `${FileSystem.cacheDirectory}temp_audio_${Date.now()}.mp3`;
+      await FileSystem.writeAsStringAsync(tempFile, audioBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
       // Create and load audio with proper error handling
       this.soundObject = new Audio.Sound();
       
       const { sound: loadedSound, status } = await Audio.Sound.createAsync(
-        { uri: audioUri },
-        { shouldPlay: false }
+        { uri: tempFile },
+        { 
+          shouldPlay: false,
+          progressUpdateIntervalMillis: 50,
+          positionMillis: 0,
+          volume: 1.0,
+          rate: 1.0,
+          shouldCorrectPitch: true,
+        },
+        (status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            this.isSpeaking = false;
+            options?.onComplete?.();
+            // Clean up temp file
+            FileSystem.deleteAsync(tempFile, { idempotent: true }).catch(console.error);
+          }
+        }
       );
       
       if (!status.isLoaded) {
@@ -146,7 +174,7 @@ class ElevenLabsService {
     }
   }
 
-  async stop() {
+  private async cleanup() {
     try {
       if (this.soundObject) {
         const status = await this.soundObject.getStatusAsync();
@@ -156,7 +184,15 @@ class ElevenLabsService {
         }
         this.soundObject = null;
       }
-      this.isSpeaking = false;
+    } catch (error) {
+      console.warn('Error during audio cleanup:', error);
+    }
+    this.isSpeaking = false;
+  }
+
+  async stop() {
+    try {
+      await this.cleanup();
     } catch (error) {
       console.error('Error stopping audio:', error);
     }
