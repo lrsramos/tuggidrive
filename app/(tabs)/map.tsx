@@ -59,6 +59,13 @@ export default function MapScreen() {
     }
   }, [location, mapReady]);
 
+  // Fetch POIs on mount
+  useEffect(() => {
+    if (!poisLoaded.current) {
+      poisLoaded.current = true;
+    }
+  }, []);
+
   // Handle POIs loading
   useEffect(() => {
     if (!loading && pois.length > 0) {

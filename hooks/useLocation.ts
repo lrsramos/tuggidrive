@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
+import { Platform } from 'react-native';
 
 export function useLocation() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
@@ -10,7 +11,12 @@ export function useLocation() {
 
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
+        let { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (Platform.OS === 'ios') {
+        const backgroundStatus = await Location.requestBackgroundPermissionsAsync();
+        status = backgroundStatus.status;
+      }
         if (status !== 'granted') {
           setErrorMsg('Permission to access location was denied');
           return;
@@ -22,12 +28,17 @@ export function useLocation() {
         });
         setLocation(initialLocation);
 
-        // Start watching location
+        // Start watching location with background capability
         locationSubscription = await Location.watchPositionAsync(
           {
             accuracy: Location.Accuracy.BestForNavigation,
-            timeInterval: 1000,
+            timeInterval: 3000, // Reduced frequency for better battery life
             distanceInterval: 10,
+            foregroundService: Platform.OS === 'android' ? {
+              notificationTitle: "Tuggi is tracking your location",
+              notificationBody: "This is required for background location updates",
+              notificationColor: "#11bd86"
+            } : undefined
           },
           (newLocation) => {
             setLocation(newLocation);
