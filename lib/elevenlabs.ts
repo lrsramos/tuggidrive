@@ -135,8 +135,11 @@ class ElevenLabsService {
   async stop() {
     try {
       if (this.soundObject) {
-        await this.soundObject.stopAsync();
-        await this.soundObject.unloadAsync();
+        const status = await this.soundObject.getStatusAsync();
+        if (status.isLoaded) {
+          await this.soundObject.stopAsync();
+          await this.soundObject.unloadAsync();
+        }
         this.soundObject = null;
       }
       this.isSpeaking = false;

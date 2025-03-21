@@ -44,12 +44,12 @@ export function useTTS() {
         }
 
         // Get base language code (e.g., 'en' from 'en-BR')
-        const baseLanguage = initialLanguage.split('-')[0];
+        const baseLanguage = initialLanguage;
 
         // If not supported, fall back to default language
         if (!Object.keys(AppConfig.TTS.LANGUAGES).includes(initialLanguage)) {
           initialLanguage = AppConfig.TTS.LANGUAGE.DEFAULT;
-          console.log(`Language ${baseLanguage} not supported, falling back to ${AppConfig.TTS.LANGUAGE.DEFAULT}`);
+          //console.log(`Language ${baseLanguage} not supported, falling back to ${AppConfig.TTS.LANGUAGE.DEFAULT}`);
         }
 
         // Stop any ongoing speech
@@ -152,13 +152,19 @@ export function useTTS() {
   }, [isInitialized, currentLanguage]);
 
   const stop = useCallback(async () => {
-
     try {
+      if (!elevenLabs.isLoaded()) {
+        return;
+      }
       if (speakingRef.current) {
         await elevenLabs.stop();
         speakingRef.current = false;
       }
     } catch (error) {
+      if (error.message.includes('sound is not loaded')) {
+        speakingRef.current = false;
+        return;
+      }
       console.error('Error stopping speech:', error);
       // Reset speaking state even if stop fails
       speakingRef.current = false;
