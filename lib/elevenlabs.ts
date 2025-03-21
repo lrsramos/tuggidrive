@@ -104,26 +104,40 @@ class ElevenLabsService {
         await this.cacheAudio(text, language, audioBase64);
       }
 
-      // Create audio URI
-      const audioUri = `data:audio/mpeg;base64,${audioBase64}`;
+      // Create audio URI with proper MIME type and encoding
+      const audioUri = `data:audio/mp3;base64,${audioBase64}`;
 
-      // Load and play audio
+      // Create and load audio with proper error handling
       this.soundObject = new Audio.Sound();
-      await this.soundObject.loadAsync({ uri: audioUri });
+      
+      const { sound: loadedSound, status } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: false }
+      );
+      
+      if (!status.isLoaded) {
+        throw new Error('Audio failed to load properly');
+      }
+      
+      this.soundObject = loadedSound;
 
-      // Set up event handlers
-      this.soundObject.setOnPlaybackStatusUpdate(status => {
-        if (status.isLoaded) {
-          if (status.didJustFinish) {
-            this.isSpeaking = false;
-            options?.onComplete?.();
+      // Set up event handlers only after successful loading
+      if (this.soundObject) {
+        this.soundObject.setOnPlaybackStatusUpdate(status => {
+          if (status.isLoaded) {
+            if (status.didJustFinish) {
+              this.isSpeaking = false;
+              options?.onComplete?.();
+            }
           }
-        }
-      });
+        });
 
-      this.isSpeaking = true;
-      options?.onStart?.();
-      await this.soundObject.playAsync();
+        this.isSpeaking = true;
+        options?.onStart?.();
+        await this.soundObject.playAsync();
+      } else {
+        throw new Error('Failed to initialize audio object');
+      }
 
     } catch (error) {
       console.error('ElevenLabs TTS error:', error);
