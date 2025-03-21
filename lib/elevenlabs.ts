@@ -177,17 +177,42 @@ class ElevenLabsService {
   private async cleanup() {
     try {
       if (this.soundObject) {
-        const status = await this.soundObject.getStatusAsync();
-        if (status.isLoaded) {
-          await this.soundObject.stopAsync();
-          await this.soundObject.unloadAsync();
+        try {
+          const status = await this.soundObject.getStatusAsync();
+          if (status.isLoaded) {
+            try {
+              await this.soundObject.stopAsync();
+            } catch (stopError) {
+              // Ignore seeking interrupted errors during stop
+              if (!stopError.message?.includes('Seeking interrupted')) {
+                console.warn('Error stopping audio:', stopError);
+              }
+            }
+            
+            try {
+              await this.soundObject.unloadAsync();
+            } catch (unloadError) {
+              console.warn('Error unloading audio:', unloadError);
+            }
+          }
+        } catch (statusError) {
+          // If we can't get status, still try to unload
+          try {
+            await this.soundObject.unloadAsync();
+          } catch (unloadError) {
+            // Ignore unload errors at this point
+          }
         }
+        
+        // Always set to null regardless of errors
         this.soundObject = null;
       }
     } catch (error) {
       console.warn('Error during audio cleanup:', error);
+    } finally {
+      // Always reset speaking state
+      this.isSpeaking = false;
     }
-    this.isSpeaking = false;
   }
 
   async stop() {

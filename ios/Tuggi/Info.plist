@@ -50,13 +50,15 @@
 		<true/>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Allow Tuggi to use your location.</string>
+	<string>Tuggi needs your location to provide navigation assistance and find nearby points of interest, even when the app is in the background.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your location</string>
+	<string>Tuggi needs continuous access to your location to provide real-time navigation and proximity alerts, even when the app is not active.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your location</string>
+	<string>Tuggi needs your location to help you navigate and discover nearby points of interest while using the app.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your microphone</string>
+	<string>Tuggi needs microphone access to enable voice commands and audio descriptions for points of interest.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Tuggi needs motion data to improve navigation accuracy and detect your movement patterns.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -66,6 +68,13 @@
 		<string>location</string>
 		<string>fetch</string>
 		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.tuggi.app.refresh</string>
+		<string>com.tuggi.app.processing</string>
+		<string>com.tuggi.app.background.processing</string>
+		<string>com.tuggi.app.background.refresh</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
@@ -93,5 +102,13 @@
 	<string>Automatic</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Tuggi needs camera access to let you take photos for your profile and add images to points of interest.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Tuggi needs access to your photo library to let you choose profile pictures and add images to points of interest.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Tuggi needs permission to save photos to your library when you download POI images.</string>
+	<key>NSRemoteNotificationUsageDescription</key>
+	<string>Tuggi sends notifications about nearby points of interest and important updates to enhance your experience.</string>
 </dict>
 </plist>

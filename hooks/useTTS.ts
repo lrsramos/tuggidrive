@@ -27,12 +27,17 @@ export function useTTS() {
       try {
         initializingRef.current = true;
         
+        // Stop any ongoing speech before initializing
+        if (speakingRef.current) {
+          await elevenLabs.stop();
+          speakingRef.current = false;
+        }
+        
         let initialLanguage = systemLanguage;
         
         if (isPremium) {
           try {
             const savedLanguage = await AsyncStorage.getItem(TTS_LANGUAGE_KEY);
-           // console.log('[TTS] Stored language preference:', savedLanguage);
             if (savedLanguage) {
               initialLanguage = savedLanguage;
             } else if (profile?.voice_preference) {
@@ -95,20 +100,25 @@ export function useTTS() {
         throw new Error(`Language ${baseLanguage} is not supported`);
       }
 
-      // Stop any ongoing speech
-      await elevenLabs.stop();
-      speakingRef.current = false;
+      // Stop any ongoing speech and wait for it to complete
+      if (speakingRef.current) {
+        await elevenLabs.stop();
+        speakingRef.current = false;
+      }
 
-      // Update AsyncStorage first
-      await AsyncStorage.setItem(TTS_LANGUAGE_KEY, language);
-      console.log('[TTS] Updated language preference:', language);
-
-      // Then update the state and profile
+      // Update state first to ensure immediate language change
       setCurrentLanguage(language);
       
-      if (profile) {
-        await updateProfile({ voice_preference: language });
-      }
+      // Then update storage and profile
+      await Promise.all([
+        AsyncStorage.setItem(TTS_LANGUAGE_KEY, language),
+        profile ? updateProfile({ voice_preference: language }) : Promise.resolve()
+      ]);
+      
+      // Wait for state update to propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('[TTS] Language changed to:', language);
+
     } catch (error) {
       console.error('Error setting language:', error);
       throw new Error('Failed to change language');
@@ -124,9 +134,20 @@ export function useTTS() {
     if (!isInitialized) return;
 
     try {
+      // Wait for any pending language changes to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Get the current language at the time of speaking
+      const speakLanguage = currentLanguage;
+      console.log('[TTS] Preparing to speak with language:', speakLanguage);
+      
+      // Ensure we're not speaking before starting new speech
+      if (speakingRef.current) {
+        await stop();
+      }
       speakingRef.current = true;
       
-      await elevenLabs.speak(text.trim(), currentLanguage, {
+      await elevenLabs.speak(text.trim(), speakLanguage, {
         onStart: () => {
           if (isMounted.current) {
             options?.onStart?.();
@@ -153,20 +174,34 @@ export function useTTS() {
 
   const stop = useCallback(async () => {
     try {
-      if (!elevenLabs.isLoaded()) {
+      // First ensure we have a valid elevenLabs instance
+      if (!elevenLabs) {
+        console.warn('TTS: Attempted to stop with no elevenLabs instance');
+        speakingRef.current = false;
         return;
       }
+      
+      // Only attempt to stop if we're currently speaking
       if (speakingRef.current) {
-        await elevenLabs.stop();
-        speakingRef.current = false;
+        try {
+          // Ensure any existing audio is properly cleaned up
+          await Promise.race([
+            elevenLabs.stop(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Stop timeout')), 3000)
+            )
+          ]);
+        } catch (error) {
+          // Log but don't rethrow to ensure we always reset speaking state
+          console.warn('TTS: Error during stop operation:', error);
+          // Force reset speaking state on error
+          speakingRef.current = false;
+        }
       }
     } catch (error) {
-      if (error.message.includes('sound is not loaded')) {
-        speakingRef.current = false;
-        return;
-      }
-      console.error('Error stopping speech:', error);
-      // Reset speaking state even if stop fails
+      console.error('TTS: Unexpected error in stop function:', error);
+    } finally {
+      // Always reset speaking state regardless of errors
       speakingRef.current = false;
     }
   }, []);

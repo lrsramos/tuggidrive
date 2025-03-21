@@ -64,8 +64,8 @@ export function LanguageSelector({
                       onPremiumPress?.();
                       return;
                     }
+                    console.log(`Language changed from ${value} to ${lang.code}`);
                     onChange(lang.code);
-                    //console.log('Language seleted by user',lang.code)
                     AsyncStorage.setItem('@selected_language', lang.code).catch(error => {
                       console.error('Error saving language preference:', error);
                     });

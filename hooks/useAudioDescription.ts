@@ -22,10 +22,11 @@ export function useAudioDescription() {
     try {
       setTtsError(null);
 
-      // If already speaking, stop the audio
+      // If already speaking, stop the audio and reset state
       if (isSpeaking) {
         await stop();
         setIsSpeaking(false);
+        setCurrentDescription(null); // Reset description to force refresh
         return;
       }
 
