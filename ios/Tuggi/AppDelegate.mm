@@ -1,4 +1,5 @@
 #import "AppDelegate.h"
+#import <AVFoundation/AVFoundation.h>
 // @generated begin react-native-maps-import - expo prebuild (DO NOT MODIFY) sync-f2f83125c99c0d74b42a2612947510c4e08c423a
 #if __has_include(<GoogleMaps/GoogleMaps.h>)
 #import <GoogleMaps/GoogleMaps.h>
@@ -12,6 +13,16 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  // Configure audio session for playback
+  NSError *error = nil;
+  [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
+  if (error) {
+    NSLog(@"Failed to set audio session category: %@", error);
+  }
+  [[AVAudioSession sharedInstance] setActive:YES error:&error];
+  if (error) {
+    NSLog(@"Failed to set audio session active: %@", error);
+  }
 // @generated begin react-native-maps-init - expo prebuild (DO NOT MODIFY) sync-d867887878fe1efc07cc0aa30228b2658dacd6aa
 #if __has_include(<GoogleMaps/GoogleMaps.h>)
   [GMSServices provideAPIKey:@"YOUR_IOS_GOOGLE_MAPS_API_KEY"];
